@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HK-IEP CoPilot 4.0｜香港校本 IEP 智慧擬寫與微調平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; }
+        @media print {
+            .no-print { display: none !important; }
+            .print-area { box-shadow: none !important; border: none !important; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            body { background-color: white; }
+        }
+        .iep-table th, .iep-table td { border: 1px solid #94a3b8; padding: 8px 10px; vertical-align: top; font-size: 0.85rem; }
+        .iep-table th { background-color: #f1f5f9; font-weight: 700; text-align: center; }
+        .drop-zone--over { border-color: #4f46e5 !important; background-color: #eef2ff !important; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- 頂部導航欄 -->
+    <header class="bg-indigo-950 text-white shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-col md:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <span class="bg-amber-400 text-indigo-950 font-extrabold px-3 py-1 rounded-lg text-base">HK-IEP 4.0</span>
+                <div>
+                    <h1 class="text-lg font-bold tracking-wide">香港校本個別學習計劃 (IEP) 智慧擬寫與微調平台</h1>
+                    <p class="text-xs text-indigo-200">支援問卷上傳、期中微調版本管理、中英雙語切換｜林老師（林廷曦老師）專用版</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 bg-indigo-900 p-1.5 rounded-xl border border-indigo-700">
+                <span class="text-xs px-2 text-indigo-200 font-medium">🌐 語言版本：</span>
+                <button onclick="setLang('zh')" id="lang-zh" class="px-3 py-1 rounded-lg text-xs font-bold bg-amber-400 text-indigo-950 transition">繁體中文</button>
+                <button onclick="setLang('en')" id="lang-en" class="px-3 py-1 rounded-lg text-xs font-bold text-white hover:bg-indigo-800 transition">English</button>
+                <button onclick="setLang('bi')" id="lang-bi" class="px-3 py-1 rounded-lg text-xs font-bold text-white hover:bg-indigo-800 transition">中英對照</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- 左側面板 -->
+        <section class="lg:col-span-5 space-y-4 no-print">
+
+            <!-- 上傳與專案管理 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                <h2 class="text-sm font-bold text-indigo-950 flex items-center justify-between">
+                    <span class="flex items-center gap-2"><span class="bg-indigo-600 text-white w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">1</span> 📂 檔案與版本管理</span>
+                    <button onclick="saveProjectJson()" class="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded border border-indigo-200 font-medium hover:bg-indigo-100">💾 儲存專案 (.json)</button>
+                </h2>
+                <input type="file" id="real-file-input" accept=".pdf,.png,.jpg,.jpeg,.txt,.json" class="hidden" onchange="handleFileUpload(event)">
+                <div onclick="document.getElementById('real-file-input').click()" class="border-2 border-dashed border-indigo-300 bg-indigo-50/40 hover:bg-indigo-50 rounded-xl p-3 text-center cursor-pointer transition">
+                    <div class="text-xl mb-0.5">📤</div>
+                    <div class="text-xs font-bold text-indigo-900">上傳問卷檔案 / 載入已儲存的 IEP 專案檔</div>
+                </div>
+                <div id="upload-status-box" class="hidden p-2 rounded-lg text-xs border"></div>
+            </div>
+
+            <!-- 步驟 2：微調與版本控制面板 (新功能) -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border-2 border-amber-300 bg-amber-50/30 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-amber-950 flex items-center gap-2">
+                        <span class="bg-amber-600 text-white w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">2</span>
+                        ✏️ IEP 期中微調與版本記錄
+                    </h2>
+                    <button onclick="addNewRevision()" class="text-[11px] bg-amber-600 hover:bg-amber-700 text-white px-2 py-1 rounded font-bold">+ 建立新修訂版本</button>
+                </div>
+                <p class="text-[11px] text-slate-600">因應病歷更新或家長需求微調計劃時，可記錄修訂原因與日期，建立版本歷程：</p>
+                <div class="space-y-2 text-xs">
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-0.5">目前版本狀態 / 修訂紀錄說明：</label>
+                        <input type="text" id="revision-note" value="初版計劃 (10月訂立)" oninput="generateIEP()" class="w-full border border-slate-300 rounded px-2 py-1 bg-white">
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-[11px] text-slate-500">歷史版本記錄：<span id="version-count">1</span> 個版本</span>
+                        <button onclick="toggleRevisionHistory()" class="text-indigo-600 hover:underline font-medium text-[11px]">查看歷史版本清單</button>
+                    </div>
+                    <div id="version-history-box" class="hidden bg-white p-2 rounded border border-slate-200 space-y-1 text-[11px]">
+                        <!-- 歷史版本清單 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步驟 3：表格範本選擇 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-sm font-bold text-indigo-950 mb-2 flex items-center gap-2">
+                    <span class="bg-indigo-100 text-indigo-800 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">3</span>
+                    選擇香港教育局 (EDB) 表格範本
+                </h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="setTemplate('2b')" id="btn-2b" class="p-2 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-left transition">
+                        <div class="font-bold text-xs text-indigo-950">範本 2b：三層支援模式 ⭐</div>
+                    </button>
+                    <button type="button" onclick="setTemplate('2a')" id="btn-2a" class="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-left transition">
+                        <div class="font-bold text-xs text-slate-800">範本 2a：標準目標模式</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 步驟 4：學生基本資料與強弱項 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                <h2 class="text-sm font-bold text-indigo-950 flex items-center gap-2">
+                    <span class="bg-indigo-100 text-indigo-800 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">4</span>
+                    學生基本資料與問卷現況
+                </h2>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <label class="block text-slate-600 mb-1 font-medium">學生姓名 (中 / 英)</label>
+                        <input type="text" id="stu-name-zh" value="尹駿" oninput="generateIEP()" class="w-full border border-slate-300 rounded px-2 py-1 mb-1">
+                        <input type="text" id="stu-name-en" value="Wan Chun" oninput="generateIEP()" class="w-full border border-slate-300 rounded px-2 py-1">
+                    </div>
+                    <div class="space-y-1">
+                        <div>
+                            <label class="block text-slate-600 mb-0.5 font-medium">班級 / 年齡</label>
+                            <input type="text" id="stu-class" value="4A (9歲 / Age 9)" oninput="generateIEP()" class="w-full border border-slate-300 rounded px-2 py-1">
+                        </div>
+                        <div>
+                            <label class="block text-slate-600 mb-0.5 font-medium">施行時段</label>
+                            <input type="text" id="period-date" value="2026/10 - 2027/01" oninput="generateIEP()" class="w-full border border-slate-300 rounded px-2 py-1">
+                        </div>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-slate-600 mb-1 font-medium">SEN 類別</label>
+                        <select id="stu-sen" onchange="generateIEP()" class="w-full border border-slate-300 rounded px-2 py-1 bg-white">
+                            <option value="asd">自閉症 (ASD)</option>
+                            <option value="asd_adhd">自閉症兼注意力不足/過度活躍症 (ASD & ADHD)</option>
+                            <option value="spld">特殊學習困難 (SpLD)</option>
+                            <option value="id">輕度智障 (ID)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-100 space-y-2 text-xs">
+                    <div>
+                        <label class="block font-bold text-emerald-800 mb-1">✅ 強項 (Strengths)：</label>
+                        <textarea id="stu-strengths-zh" rows="2" oninput="generateIEP()" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1">課堂常規良好，能安坐、留心聆聽及遵從老師指令（項目2）；物件管理佳，能抄齊手冊、交功課及執拾書包（項目5）；待人有禮，懂得打招呼及尊重同學（項目18, 20, 22）。</textarea>
+                        <textarea id="stu-strengths-en" rows="2" oninput="generateIEP()" class="w-full border border-slate-300 rounded p-1.5 text-xs bg-slate-50">Good classroom routines; sits still and follows instructions (Item 2). Manages personal items well (Item 5). Polite and respectful to peers (Items 18, 20, 22).</textarea>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-rose-800 mb-1">⚠️ 優先關注弱項 (Weaknesses / Needs)：</label>
+                        <textarea id="stu-weaknesses-zh" rows="3" oninput="generateIEP()" class="w-full border border-slate-300 rounded p-1.5 text-xs mb-1">1. 小組討論與高層次思考較弱（項目4, 8）。
+2. 處事靈活性及感官調適（項目1, 7）。
+3. 社交對話與解難（項目14, 15, 17）。
+4. 情緒理解與調控（項目29, 31, 32）。</textarea>
+                        <textarea id="stu-weaknesses-en" rows="3" oninput="generateIEP()" class="w-full border border-slate-300 rounded p-1.5 text-xs bg-slate-50">1. Group discussion & higher-order thinking (Items 4, 8).
+2. Cognitive flexibility & sensory adaptation (Items 1, 7).
+3. Conversational and social problem-solving (Items 14, 15, 17).
+4. Emotional understanding & regulation (Items 29, 31, 32).</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步驟 5：目標勾選 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-sm font-bold text-indigo-950 mb-2 flex items-center justify-between">
+                    <span class="flex items-center gap-2"><span class="bg-indigo-100 text-indigo-800 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">5</span> 問卷目標庫</span>
+                    <span class="text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-semibold">可自由勾選微調</span>
+                </h2>
+                <div id="domain-selector" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+            </div>
+
+        </section>
+
+        <!-- 右側：預覽與微調輸出 -->
+        <section class="lg:col-span-7 space-y-4">
+            <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-2 no-print">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full">✏️ 表格文字可直接點擊修改微調</span>
+                    <span id="status-badge" class="text-xs text-slate-500 font-medium">範本 2b｜繁體中文版</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="exportToWord()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-sm transition">📄 匯出 Word (.doc)</button>
+                    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-sm transition">🖨️ 列印 / 儲存 PDF</button>
+                </div>
+            </div>
+
+            <!-- IEP 計劃書渲染容器 -->
+            <div id="iep-document" contenteditable="true" class="print-area bg-white p-8 rounded-xl shadow-sm border border-slate-200 space-y-5 leading-relaxed"></div>
+        </section>
+
+    </main>
+
+    <script>
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        let currentTemplate = '2b';
+        let currentLang = 'zh';
+        let revisionHistory = [
+            { id: 1, note: '初版計劃 (2026年10月訂立)', date: '2026-10-23' }
+        ];
+
+        const senMap = {
+            asd: { zh: '自閉症 (ASD)', en: 'Autism Spectrum Disorder (ASD)' },
+            asd_adhd: { zh: '自閉症 兼 注意力不足/過度活躍症 (ASD & ADHD)', en: 'Autism Spectrum Disorder (ASD) & ADHD' },
+            spld: { zh: '特殊學習困難 (SpLD)', en: 'Specific Learning Difficulties (SpLD)' },
+            id: { zh: '輕度智障 (Mild ID)', en: 'Mild Intellectual Disability (ID)' }
+        };
+
+        const questionnaireGoals = [
+            {
+                id: 'q_learn_group_think',
+                badge: '問卷項目 4, 6, 8',
+                cat_zh: '學習適應 (小組討論與高層次思考)',
+                cat_en: 'Learning Adaptation (Group Discussion & Thinking)',
+                long_zh: '掌握視覺思考框架以輔助閱讀歸納與寫作大綱，並提升在課堂小組討論中角色參與及表達意見的能力。',
+                long_en: 'Master visual thinking frameworks to support reading summarization and writing outlines.',
+                short_zh: '1. 在提供視覺框架下，能從資料提取要點及訂出寫作大綱。\n2. 在小組討論中，能按指定角色卡發表最少一句個人意見。',
+                short_en: '1. Extract key points and draft an outline with visual organizers.\n2. Express opinions in group discussions using role cards.',
+                tier1_zh: '【科任教師、教學助理】\n• 提供調適工作紙及「寫作大綱視覺框架」，加入顏色關鍵字標示。\n• 派發明確的「討論角色任務卡」及「句式提示卡」。',
+                tier1_en: '[Subject Teachers, TA]\n• Provide adapted worksheets and visual writing outline frames.\n• Assign Role Cards and Sentence Starter Cards.',
+                tier2_zh: '【輔導教學人員 / 教學助理】\n• 課後輔導運用「腦圖(Mind Map)」提取段落大意；進行4-6節小組協作訓練。',
+                tier2_en: '[Learning Support Teacher / TA]\n• Conduct small group sessions on Mind Mapping and collaboration.',
+                tier3_zh: '【教學助理】\n• 課前10分鐘預習；提供「工作先後次序清單(Checklist)」。',
+                tier3_en: '[Teaching Assistant]\n• Provide pre-lesson coaching and task priority checklists.',
+                home_zh: '• 家長督導功課時，提示先圈出關鍵字並使用腦圖框架組織想法。',
+                home_en: '• Prompt student to circle keywords and use Mind Maps at home.',
+                criteria_zh: '視覺框架提示下調適工作紙達標70%或以上；小組討論80%情況能完成指定角色發言。',
+                criteria_en: '70% accuracy on adapted worksheets; participate in roles in 80% of group sessions.',
+                staff_zh: '班主任、中文科教師、教學助理',
+                staff_en: 'Class Teacher, Subject Teacher, TA'
+            },
+            {
+                id: 'q_learn_flex_sensory',
+                badge: '問卷項目 1, 7',
+                cat_zh: '學習適應 (處事靈活性與感官調適)',
+                cat_en: 'Learning Adaptation (Flexibility & Sensory Regulation)',
+                long_zh: '提升面對環境感官刺激及日常程序改變時的適應力，能順利過渡不同學習活動。',
+                long_en: 'Enhance adaptability to sensory stimuli and routine changes.',
+                short_zh: '1. 當活動規則改變時，在預告提示下能平和接受並跟從新安排。\n2. 在轉堂時能在計時器提示下暫時放下未完成工作，過渡至下一項活動。',
+                short_en: '1. Accept routine changes calmly with advance notice.\n2. Transition smoothly between activities using a timer.',
+                tier1_zh: '【班主任、科任教師、教學助理】\n• 預告機制：利用「視覺時間表」預告變動。\n• 提供「未完成工作暫存夾」；安排遠離噪音源座位或允許使用降噪耳塞。',
+                tier1_en: '[Class Teacher, Subject Teachers, TA]\n• Use visual schedules for schedule previews.\n• Provide a Work-in-Progress Folder and sensory accommodations.',
+                tier2_zh: '【學生輔導人員】\n• 小組遊戲加入規則小改變練習，強化思維彈性。',
+                tier2_en: '[Guidance Personnel]\n• Practice mini rule changes in group games.',
+                tier3_zh: '【教學助理】\n• 運用「社交故事」個別講解規則改變的應對方式。',
+                tier3_en: '[Teaching Assistant]\n• Use personalized Social Stories for routine changes.',
+                home_zh: '• 家長行程變動前預先預告，肯定孩子彈性配合的表現。',
+                home_en: '• Preview schedule changes in advance and praise cooperative behavior.',
+                criteria_zh: '預告及視覺提示下，80%情況能於2分鐘內順利完成活動過渡。',
+                criteria_en: 'Transition smoothly within 2 minutes with visual cues in 80% of instances.',
+                staff_zh: '班主任、科任教師、教學助理',
+                staff_en: 'Class Teacher, Subject Teachers, TA'
+            },
+            {
+                id: 'q_social_conv_solve',
+                badge: '問卷項目 9-17',
+                cat_zh: '社交適應 (雙向對話與社交解難)',
+                cat_en: 'Social Adaptation (Conversation & Problem-Solving)',
+                long_zh: '提升雙向維持對話（不離題、提問及澄清）的語用能力，並能平和地面對過失或不如意事件。',
+                long_en: 'Improve pragmatic skills in conversation and handling setbacks calmly.',
+                short_zh: '1. 圍繞同一話題進行最少3個回合輪流對話（不離題），不明白時主動澄清。\n2. 遇到不如意或犯錯時，能運用社交解難步驟平和處理及尋求協助。',
+                short_en: '1. Maintain a 3-turn on-topic conversation and ask for clarification.\n2. Handle setbacks calmly and seek help when needed.',
+                tier1_zh: '【班主任、科任教師、教學助理】\n• 安排午間朋輩桌遊，溫和手勢或口頭提示引導不離題。',
+                tier1_en: '[Class Teacher, Subject Teachers, TA]\n• Arrange lunchtime peer board games with gentle redirection prompts.',
+                tier2_zh: '【言語治療師 / 輔導人員】\n• 進行6節語用社交小組（練習話題乒乓球、解讀非語言線索）。',
+                tier2_en: '[Speech Therapist / Guidance]\n• Conduct 6 pragmatic social group sessions practicing Conversation Ping-Pong.',
+                tier3_zh: '【教學助理】\n• 社交挫折後運用圖像解說與問題量尺，分析前因後果。',
+                tier3_en: '[Teaching Assistant]\n• Use visual debriefing and a problem scale after social hiccups.',
+                home_zh: '• 每日10分鐘「話題乒乓球」練習，鼓勵反問問題。',
+                home_en: '• Practice 10 minutes of Conversation Ping-Pong daily at home.',
+                criteria_zh: '80%情況能維持3回合不離題對話；遇困擾70%情況能口頭求助。',
+                criteria_en: 'Maintain 3-turn conversation in 80% of observations; seek help verbally in 70% of issues.',
+                staff_zh: '班主任、言語治療師、社工',
+                staff_en: 'Class Teacher, Speech Therapist, Social Worker'
+            },
+            {
+                id: 'q_emo_reg',
+                badge: '問卷項目 29-32',
+                cat_zh: '情緒適應 (情緒理解與自我調控)',
+                cat_en: 'Emotional Adaptation (Understanding & Regulation)',
+                long_zh: '能運用進階情緒詞彙描述及解釋情緒成因，並掌握冷靜策略以調控情緒。',
+                long_en: 'Use advanced emotion vocabulary and calming strategies to regulate emotions.',
+                short_zh: '1. 運用進階情緒詞彙描述感受並說出情緒成因。\n2. 感到憤怒或焦慮時運用冷靜策略於5分鐘內平復並重新投入活動。',
+                short_en: '1. Describe feelings using advanced emotion words and state causes.\n2. Use calming strategies to recover within 5 minutes when upset.',
+                tier1_zh: '【班主任、教學助理】\n• 桌面貼上「情緒五級溫度計」及「冷靜策略選擇卡」。',
+                tier1_en: '[Class Teacher, TA]\n• Place an Emotion Thermometer and Calming Choice Card on the desk.',
+                tier2_zh: '【學生輔導人員】\n• 4-6節情緒管理小組，認識進階情緒詞彙與覺察身體訊號。',
+                tier2_en: '[Guidance Personnel]\n• Run 4-6 emotional regulation group sessions.',
+                tier3_zh: '【學生輔導人員】\n• 運用「心情日記」個別輔導，連繫情緒前因後果。',
+                tier3_en: '[Guidance Personnel]\n• Conduct individual counseling using a Mood Journal.',
+                home_zh: '• 每天分享校園事件，引導使用進階情緒詞彙表達。',
+                home_en: '• Practice sharing school events using advanced emotion vocabulary daily.',
+                criteria_zh: '75%情況能說出自身情緒及成因；80%情況能在提示下5分鐘內平復。',
+                criteria_en: 'Identify emotions in 75% of instances; recover within 5 minutes in 80% of episodes.',
+                staff_zh: '班主任、學生輔導人員、教學助理',
+                staff_en: 'Class Teacher, Guidance Personnel, TA'
+            }
+        ];
+
+        let selectedGoalIds = ['q_learn_group_think', 'q_learn_flex_sensory', 'q_social_conv_solve', 'q_emo_reg'];
+
+        window.onload = function() {
+            renderDomainSelector();
+            generateIEP();
+        };
+
+        function addNewRevision() {
+            const newId = revisionHistory.length + 1;
+            const note = prompt(`請輸入第 ${newId} 次修訂的原因或說明（例如：因應家長要求微調目標 / 醫生更新病歷）：`, `期中修訂 #${newId} (微調目標與策略)`);
+            if (note) {
+                const today = new Date().toISOString().split('T')[0];
+                revisionHistory.push({ id: newId, note: note, date: today });
+                document.getElementById('revision-note').value = `${note} (${today})`;
+                document.getElementById('version-count').innerText = revisionHistory.length;
+                renderVersionHistory();
+                alert(`✅ 成功建立第 ${newId} 版修訂紀錄！系統已更新版本標籤。`);
+                generateIEP();
+            }
+        }
+
+        function toggleRevisionHistory() {
+            const box = document.getElementById('version-history-box');
+            box.classList.toggle('hidden');
+            renderVersionHistory();
+        }
+
+        function renderVersionHistory() {
+            const box = document.getElementById('version-history-box');
+            box.innerHTML = revisionHistory.map(v => `
+                <div class="flex justify-between items-center border-b pb-1">
+                    <div><b>版本 #${v.id}</b>: ${v.note}</div>
+                    <span class="text-slate-400">${v.date}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderDomainSelector() {
+            const container = document.getElementById('domain-selector');
+            container.innerHTML = questionnaireGoals.map(item => {
+                const isChecked = selectedGoalIds.includes(item.id) ? 'checked' : '';
+                return `
+                    <label class="flex items-start gap-2 p-2 rounded border ${isChecked ? 'border-indigo-600 bg-indigo-50/70' : 'border-slate-200 hover:bg-slate-50'} cursor-pointer transition text-xs">
+                        <input type="checkbox" value="${item.id}" ${isChecked} onchange="toggleGoal('${item.id}')" class="mt-0.5 rounded text-indigo-600">
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-indigo-950">${item.cat_zh.split(' ')[0]}</span>
+                                <span class="text-[10px] bg-rose-100 text-rose-800 px-1 py-0.5 rounded font-medium">${item.badge}</span>
+                            </div>
+                            <div class="text-slate-600 mt-0.5">${item.short_zh.split('\n')[0]}</div>
+                        </div>
+                    </label>
+                `;
+            }).join('');
+        }
+
+        function toggleGoal(id) {
+            selectedGoalIds = selectedGoalIds.includes(id) ? selectedGoalIds.filter(g => g !== id) : [...selectedGoalIds, id];
+            renderDomainSelector();
+            generateIEP();
+        }
+
+        function setTemplate(tpl) {
+            currentTemplate = tpl;
+            document.getElementById('btn-2b').className = tpl === '2b' ? 'p-2 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-left transition' : 'p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-left transition';
+            document.getElementById('btn-2a').className = tpl === '2a' ? 'p-2 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-left transition' : 'p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-left transition';
+            updateStatusBadge();
+            generateIEP();
+        }
+
+        function setLang(lang) {
+            currentLang = lang;
+            ['zh', 'en', 'bi'].forEach(l => {
+                document.getElementById('lang-' + l).className = l === lang ? 'px-3 py-1 rounded-lg text-xs font-bold bg-amber-400 text-indigo-950 transition' : 'px-3 py-1 rounded-lg text-xs font-bold text-white hover:bg-indigo-800 transition';
+            });
+            updateStatusBadge();
+            generateIEP();
+        }
+
+        function updateStatusBadge() {
+            const tplText = currentTemplate === '2b' ? '範本 2b (三層支援)' : '範本 2a (標準目標)';
+            const langText = currentLang === 'zh' ? '繁體中文版' : (currentLang === 'en' ? 'English Version' : '中英雙語版');
+            document.getElementById('status-badge').innerText = `${tplText}｜${langText}`;
+        }
+
+        function t(zhText, enText) {
+            if (currentLang === 'zh') return zhText;
+            if (currentLang === 'en') return enText;
+            return `<div class="mb-1">${zhText}</div><div class="text-slate-600 text-[0.8rem] border-t border-dashed border-slate-200 pt-1">${enText}</div>`;
+        }
+
+        function generateIEP() {
+            const nameZh = document.getElementById('stu-name-zh').value;
+            const nameEn = document.getElementById('stu-name-en').value;
+            const cls = document.getElementById('stu-class').value;
+            const senKey = document.getElementById('stu-sen').value;
+            const periodDate = document.getElementById('period-date').value;
+            const revNote = document.getElementById('revision-note').value;
+            const strengthsZh = document.getElementById('stu-strengths-zh').value;
+            const strengthsEn = document.getElementById('stu-strengths-en').value;
+            const weaknessesZh = document.getElementById('stu-weaknesses-zh').value;
+            const weaknessesEn = document.getElementById('stu-weaknesses-en').value;
+
+            const studentName = currentLang === 'zh' ? nameZh : (currentLang === 'en' ? nameEn : `${nameZh} (${nameEn})`);
+            const senText = currentLang === 'zh' ? senMap[senKey].zh : (currentLang === 'en' ? senMap[senKey].en : `${senMap[senKey].zh} / ${senMap[senKey].en}`);
+
+            const activeGoals = questionnaireGoals.filter(g => selectedGoalIds.includes(g.id));
+            const docContainer = document.getElementById('iep-document');
+
+            if (currentTemplate === '2b') {
+                const rowsHtml = activeGoals.map(g => `
+                    <tr>
+                        <td class="font-bold text-slate-800 bg-slate-50/60 whitespace-pre-line">${t(g.cat_zh, g.cat_en)}</td>
+                        <td class="whitespace-pre-line">${t(g.short_zh, g.short_en)}</td>
+                        <td class="whitespace-pre-line">${t(g.tier1_zh, g.tier1_en)}</td>
+                        <td class="whitespace-pre-line">${t(g.tier2_zh, g.tier2_en)}</td>
+                        <td class="whitespace-pre-line">${t(g.tier3_zh, g.tier3_en)}</td>
+                        <td class="whitespace-pre-line">${t(g.home_zh, g.home_en)}</td>
+                        <td class="whitespace-pre-line">${t(g.criteria_zh, g.criteria_en)}</td>
+                        <td class="text-center">☐</td>
+                        <td class="text-center">☐</td>
+                        <td class="text-center">☐</td>
+                    </tr>
+                `).join('');
+
+                docContainer.innerHTML = `
+                    <div class="text-center border-b-2 border-slate-800 pb-3">
+                        <h2 class="text-xl font-bold tracking-wider">${t('個別學習計劃：(分層支援模式)', 'Individual Education Plan (Tiered Model)')}</h2>
+                        <p class="text-xs text-indigo-900 font-bold mt-1">🔄 計劃版本狀態：${revNote}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs border border-slate-300 p-4 rounded-lg bg-slate-50/40">
+                        <div><b>${t('學生姓名：', 'Student Name: ')}</b>${studentName}</div>
+                        <div><b>${t('班級 / 年齡：', 'Class / Age: ')}</b>${cls}</div>
+                        <div><b>${t('SEN 類別：', 'SEN Category: ')}</b>${senText}</div>
+                        <div><b>${t('施行時段：', 'Period: ')}</b>${periodDate}</div>
+                        <div class="col-span-2 pt-2 border-t border-slate-200">
+                            <b>${t('強項及興趣：', 'Strengths: ')}</b>
+                            <div class="mt-1 whitespace-pre-line">${t(strengthsZh, strengthsEn)}</div>
+                        </div>
+                        <div class="col-span-2 pt-2 border-t border-slate-200">
+                            <b>${t('優先關注弱項：', 'Needs: ')}</b>
+                            <div class="mt-1 whitespace-pre-line">${t(weaknessesZh, weaknessesEn)}</div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full iep-table border-collapse">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" class="w-24">${t('範疇', 'Domain')}</th>
+                                    <th rowspan="2" class="w-40">${t('短期目標 (SMART)', 'Goals')}</th>
+                                    <th colspan="3">${t('支援策略 (三層支援架構)', 'Support Strategies')}</th>
+                                    <th rowspan="2" class="w-36">${t('家校合作', 'Home-School')}</th>
+                                    <th rowspan="2" class="w-32">${t('成功指標', 'Criteria')}</th>
+                                    <th colspan="3">${t('達標', 'Status')}</th>
+                                </tr>
+                                <tr>
+                                    <th>${t('第一層', 'Tier 1')}</th>
+                                    <th>${t('第二層', 'Tier 2')}</th>
+                                    <th>${t('第三層', 'Tier 3')}</th>
+                                    <th class="w-8">完</th>
+                                    <th class="w-8">部</th>
+                                    <th class="w-8">尚</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                    <div class="border border-slate-300 p-4 rounded-lg text-xs space-y-2 bg-slate-50/40">
+                        <div class="font-bold text-slate-800">${t('參與訂定 / 檢討計劃者：', 'IEP Team Members:')}</div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div><b>${t('SENCO：', 'SENCO: ')}</b>________</div>
+                            <div><b>${t('班主任 / 教師：', 'Teacher: ')}</b>${t('林廷曦老師', 'Ms. Lam Ting Hei')}</div>
+                            <div><b>${t('教育心理學家：', 'EP: ')}</b>________</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const rowsHtml = activeGoals.map(g => `
+                    <tr>
+                        <td class="font-bold text-slate-800 bg-slate-50/60 whitespace-pre-line">${t(g.cat_zh, g.cat_en)}</td>
+                        <td class="whitespace-pre-line">${t(g.long_zh, g.long_en)}</td>
+                        <td class="whitespace-pre-line">${t(g.short_zh, g.short_en)}</td>
+                        <td class="whitespace-pre-line">${t(g.tier1_zh + '\n' + g.tier2_zh, g.tier1_en + '\n' + g.tier2_en)}</td>
+                        <td class="whitespace-pre-line">${t(g.home_zh, g.home_en)}</td>
+                        <td>${t(g.staff_zh, g.staff_en)}</td>
+                        <td class="whitespace-pre-line">${t(g.criteria_zh, g.criteria_en)}</td>
+                        <td class="text-center">☐ 完<br>☐ 部<br>☐ 尚</td>
+                    </tr>
+                `).join('');
+
+                docContainer.innerHTML = `
+                    <div class="text-center border-b-2 border-slate-800 pb-3">
+                        <h2 class="text-xl font-bold tracking-wider">${t('個別學習計劃 (IEP)', 'Individual Education Plan')}</h2>
+                        <p class="text-xs text-indigo-900 font-bold mt-1">🔄 版本狀態：${revNote}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs border border-slate-300 p-4 rounded-lg bg-slate-50/40">
+                        <div><b>${t('學生姓名：', 'Student: ')}</b>${studentName}</div>
+                        <div><b>${t('班級 / 年齡：', 'Class: ')}</b>${cls}</div>
+                        <div><b>${t('SEN 類別：', 'SEN: ')}</b>${senText}</div>
+                        <div><b>${t('施行時段：', 'Period: ')}</b>${periodDate}</div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full iep-table border-collapse">
+                            <thead>
+                                <tr>
+                                    <th>${t('範疇', 'Domain')}</th>
+                                    <th>${t('長期目標', 'Long-term')}</th>
+                                    <th>${t('短期目標', 'Short-term')}</th>
+                                    <th>${t('學校策略', 'School')}</th>
+                                    <th>${t('家長', 'Parent')}</th>
+                                    <th>${t('負責', 'Staff')}</th>
+                                    <th>${t('準則', 'Criteria')}</th>
+                                    <th>${t('成效', 'Progress')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        }
+
+        function saveProjectJson() {
+            const data = {
+                nameZh: document.getElementById('stu-name-zh').value,
+                nameEn: document.getElementById('stu-name-en').value,
+                cls: document.getElementById('stu-class').value,
+                sen: document.getElementById('stu-sen').value,
+                period: document.getElementById('period-date').value,
+                revisionNote: document.getElementById('revision-note').value,
+                revisionHistory: revisionHistory,
+                strengthsZh: document.getElementById('stu-strengths-zh').value,
+                strengthsEn: document.getElementById('stu-strengths-en').value,
+                weaknessesZh: document.getElementById('stu-weaknesses-zh').value,
+                weaknessesEn: document.getElementById('stu-weaknesses-en').value,
+                selectedGoalIds: selectedGoalIds
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `IEP_${data.nameZh}_版本歷程.json`;
+            link.click();
+        }
+
+        async function processUploadedFile(file) {
+            const text = await file.text();
+            try {
+                const data = JSON.parse(text);
+                if (data.nameZh) {
+                    document.getElementById('stu-name-zh').value = data.nameZh;
+                    document.getElementById('stu-name-en').value = data.nameEn || '';
+                    document.getElementById('stu-class').value = data.cls || '';
+                    document.getElementById('stu-sen').value = data.sen || 'asd';
+                    document.getElementById('period-date').value = data.period || '';
+                    if (data.revisionNote) document.getElementById('revision-note').value = data.revisionNote;
+                    if (data.revisionHistory) {
+                        revisionHistory = data.revisionHistory;
+                        document.getElementById('version-count').innerText = revisionHistory.length;
+                    }
+                    if (data.strengthsZh) document.getElementById('stu-strengths-zh').value = data.strengthsZh;
+                    if (data.strengthsEn) document.getElementById('stu-strengths-en').value = data.strengthsEn;
+                    if (data.weaknessesZh) document.getElementById('stu-weaknesses-zh').value = data.weaknessesZh;
+                    if (data.weaknessesEn) document.getElementById('stu-weaknesses-en').value = data.weaknessesEn;
+                    if (Array.isArray(data.selectedGoalIds)) selectedGoalIds = data.selectedGoalIds;
+                    renderDomainSelector();
+                    generateIEP();
+                    alert(`✅ 成功載入專案檔！已自動恢復該學生的 IEP 與版本記錄。`);
+                }
+            } catch(e) {
+                alert('檔案格式解析錯誤。');
+            }
+        }
+
+        function handleFileUpload(e) {
+            if (e.target.files && e.target.files.length > 0) {
+                processUploadedFile(e.target.files[0]);
+            }
+        }
+
+        function exportToWord() {
+            const content = document.getElementById('iep-document').innerHTML;
+            const nameZh = document.getElementById('stu-name-zh').value;
+            const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><style>body{font-family:'PMingLiU','Calibri',sans-serif;font-size:10.5pt;}table{width:100%;border-collapse:collapse;margin:10px 0;}th,td{border:1px solid #000;padding:6px;vertical-align:top;}th{background:#f0f0f0;}</style></head><body>${content}</body></html>`;
+            const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `IEP_${nameZh}_${currentLang.toUpperCase()}.doc`;
+            link.click();
+        }
+    </script>
+</body>
+</html>
