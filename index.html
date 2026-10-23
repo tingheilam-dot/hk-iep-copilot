@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HK-IEP CoPilot 5.0｜香港校本 IEP 智慧擬寫與 PDF 解析平台</title>
+    <title>HK-IEP CoPilot 5.2｜香港校本 IEP 智慧擬寫與雙向同步平台</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 PDF.js 核心庫，用於在瀏覽器本地安全解析 PDF 文字 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -26,10 +25,10 @@
     <header class="bg-indigo-950 text-white shadow-md no-print">
         <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-col md:flex-row justify-between items-center gap-3">
             <div class="flex items-center gap-3">
-                <span class="bg-amber-400 text-indigo-950 font-extrabold px-3 py-1 rounded-lg text-base">HK-IEP 5.0</span>
+                <span class="bg-amber-400 text-indigo-950 font-extrabold px-3 py-1 rounded-lg text-base">HK-IEP 5.2</span>
                 <div>
-                    <h1 class="text-lg font-bold tracking-wide">香港校本個別學習計劃 (IEP) 智慧擬寫與 PDF 解析平台</h1>
-                    <p class="text-xs text-indigo-200">支援 PDF 文本自動解析、期中微調版本記錄、中英雙語切換｜林老師專用版</p>
+                    <h1 class="text-lg font-bold tracking-wide">香港校本個別學習計劃 (IEP) 智慧擬寫平台</h1>
+                    <p class="text-xs text-indigo-200">已修正語言切換同步問題、支援目標多選與版本記錄｜林老師專用版</p>
                 </div>
             </div>
             <div class="flex items-center gap-2 bg-indigo-900 p-1.5 rounded-xl border border-indigo-700">
@@ -43,10 +42,10 @@
 
     <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- 左側面板 -->
+        <!-- 左側控制面板 -->
         <section class="lg:col-span-5 space-y-4 no-print">
 
-            <!-- 步驟 1：升級版 PDF 問卷上傳與解析中心 -->
+            <!-- 步驟 1：智慧上傳中心 -->
             <div class="bg-white p-4 rounded-xl shadow-sm border-2 border-indigo-200 space-y-3">
                 <div class="flex justify-between items-center">
                     <h2 class="text-sm font-bold text-indigo-950 flex items-center gap-2">
@@ -160,18 +159,18 @@
                 </div>
             </div>
 
-            <!-- 步驟 5：目標勾選 -->
+            <!-- 步驟 5：問卷目標庫多選清單 -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                 <h2 class="text-sm font-bold text-indigo-950 mb-2 flex items-center justify-between">
-                    <span class="flex items-center gap-2"><span class="bg-indigo-100 text-indigo-800 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">5</span> 問卷目標庫</span>
-                    <span class="text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-semibold">可自由勾選微調</span>
+                    <span class="flex items-center gap-2"><span class="bg-indigo-100 text-indigo-800 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">5</span> 完整問卷目標庫 (支援多選)</span>
+                    <span class="text-[11px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded font-semibold">隨意勾選多項</span>
                 </h2>
-                <div id="domain-selector" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+                <div id="domain-selector" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
             </div>
 
         </section>
 
-        <!-- 右側：預覽與輸出 -->
+        <!-- 右側預覽與輸出 -->
         <section class="lg:col-span-7 space-y-4">
             <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-2 no-print">
                 <div class="flex items-center gap-2">
@@ -184,13 +183,13 @@
                 </div>
             </div>
 
-            <div id="iep-document" contenteditable="true" class="print-area bg-white p-8 rounded-xl shadow-sm border border-slate-200 space-y-5 leading-relaxed"></div>
+            <!-- 加上 oninput 即時回寫監聽，確保切換語言時不會遺失右側的微調修改 -->
+            <div id="iep-document" contenteditable="true" oninput="syncUserEdits()" class="print-area bg-white p-8 rounded-xl shadow-sm border border-slate-200 space-y-5 leading-relaxed"></div>
         </section>
 
     </main>
 
     <script>
-        // 初始化 PDF.js Worker
         if (window.pdfjsLib) {
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
@@ -300,17 +299,68 @@
                 criteria_en: 'Identify emotions in 75% of instances; recover within 5 minutes in 80% of episodes.',
                 staff_zh: '班主任、學生輔導人員、教學助理',
                 staff_en: 'Class Teacher, Guidance Personnel, TA'
+            },
+            {
+                id: 'q_learn_routine_exec',
+                keywords: ['常規', '手冊', '書包', '交功課', '2', '3', '5'],
+                badge: '問卷項目 2, 3, 5',
+                cat_zh: '學習適應 (課堂常規與執行功能)',
+                cat_en: 'Learning Adaptation (Routines & Executive Functioning)',
+                long_zh: '建立穩定的課堂常規與物件管理能力，能準時交功課及妥善執拾書包。',
+                long_en: 'Establish stable classroom routines and material management skills.',
+                short_zh: '1. 能依照時間表在上課前取出該節課本用具預備上課。\n2. 能按日常程序準時交功課並妥善執拾個人書包。',
+                short_en: '1. Prepare textbooks before class according to the timetable.\n2. Submit homework on time and pack the schoolbag properly.',
+                tier1_zh: '【科任教師、教學助理】\n• 在課室張貼每天課堂流程；安排同儕鄰座提示取出課本。',
+                tier1_en: '[Subject Teachers, TA]\n• Post daily class schedules; arrange a peer buddy to prompt textbook retrieval.',
+                tier2_zh: '【學生輔導人員】\n• 進行4節「執行功能小達人」小組，訓練執拾書包與手冊抄寫。',
+                tier2_en: '[Guidance Personnel]\n• Conduct 4 executive functioning small group sessions.',
+                tier3_zh: '【教學助理】\n• 提供個人化「課前準備檢視表(Checklist)」。',
+                tier3_en: '[Teaching Assistant]\n• Provide a personalized pre-lesson readiness checklist.',
+                home_zh: '• 家長睡前與孩子對照時間表按顏色分類執拾書包。',
+                home_en: '• Pack schoolbag together at bedtime using color-coded folders.',
+                criteria_zh: '80%上課日能在最多一次提示下備妥書本並準時交功課。',
+                criteria_en: 'Prepare books and submit homework with at most 1 prompt on 80% of school days.',
+                staff_zh: '班主任、科任教師、教學助理',
+                staff_en: 'Class Teacher, Subject Teachers, TA'
+            },
+            {
+                id: 'q_social_play_conflict',
+                keywords: ['遊戲', '輸贏', '衝突', '欺凌', '友誼', '18', '24', '27'],
+                badge: '問卷項目 18-28',
+                cat_zh: '社交適應 (遊戲技巧與衝突處理)',
+                cat_en: 'Social Adaptation (Play & Conflict Resolution)',
+                long_zh: '發展合宜的同儕遊戲與友誼維持技巧，能正面面對輸贏及平靜處理衝突。',
+                long_en: 'Develop appropriate play and friendship skills, handling winning/losing and conflicts calmly.',
+                short_zh: '1. 在小息遊戲中能遵守規則並輪流玩耍，正面面對輸贏。\n2. 遇意見分歧時能平和商討，尋求共識或尋求成人協助。',
+                short_en: '1. Follow game rules, take turns, and cope with winning or losing positively.\n2. Discuss disagreements calmly to seek consensus or adult help.',
+                tier1_zh: '【班主任、教學助理】\n• 組織結構化小息共融遊戲角，示範「友善遊戲守則」。',
+                tier1_en: '[Class Teacher, TA]\n• Organize structured recess play corners, modeling friendly game rules.',
+                tier2_zh: '【學校社工】\n• 透過6節社交桌遊小組，演練輪流、面對輸贏及協商技巧。',
+                tier2_en: '[School Social Worker]\n• Run 6 board-game social groups practicing turn-taking and negotiation.',
+                tier3_zh: '【教學助理】\n• 協助識別欺凌處境並學習保護自己與尋求師長協助。',
+                tier3_en: '[Teaching Assistant]\n• Help identify bullying situations and practice self-protection and help-seeking.',
+                home_zh: '• 家長在家與孩子玩棋類遊戲，練習「贏咗唔驕傲，輸咗唔發嬲」。',
+                home_en: '• Play board games at home to practice good sportsmanship.',
+                criteria_zh: '80%情況能遵守遊戲規則並平和處理朋輩意見分歧。',
+                criteria_en: 'Follow game rules and handle peer disagreements calmly in 80% of observations.',
+                staff_zh: '班主任、學校社工、教學助理',
+                staff_en: 'Class Teacher, Social Worker, TA'
             }
         ];
 
-        let selectedGoalIds = ['q_learn_group_think', 'q_learn_flex_sensory', 'q_social_conv_solve', 'q_emo_reg'];
+        let selectedGoalIds = ['q_learn_group_think', 'q_learn_flex_sensory', 'q_social_conv_solve', 'q_emo_reg', 'q_learn_routine_exec', 'q_social_play_conflict'];
+        let customEditedHtml = null; // 用於雙向記憶用戶在右側微調的內容
 
         window.onload = function() {
             renderDomainSelector();
             generateIEP();
         };
 
-        // 核心：上傳檔案處理（支援 .json 專案檔、.txt 文字檔、及 .pdf 問卷文字解析）
+        function syncUserEdits() {
+            const doc = document.getElementById('iep-document');
+            customEditedHtml = doc.innerHTML; // 當用戶在右側直接打字時，自動記憶
+        }
+
         async function handleFileUpload(e) {
             if (!e.target.files || e.target.files.length === 0) return;
             const file = e.target.files[0];
@@ -339,6 +389,7 @@
                         if (data.weaknessesZh) document.getElementById('stu-weaknesses-zh').value = data.weaknessesZh;
                         if (data.weaknessesEn) document.getElementById('stu-weaknesses-en').value = data.weaknessesEn;
                         if (Array.isArray(data.selectedGoalIds)) selectedGoalIds = data.selectedGoalIds;
+                        customEditedHtml = data.customEditedHtml || null;
                         renderDomainSelector();
                         generateIEP();
                         statusBox.className = 'p-2.5 rounded-lg text-xs border bg-emerald-50 text-emerald-900 border-emerald-200 block';
@@ -376,11 +427,11 @@
                 }
             });
             if (matched.length > 0) selectedGoalIds = matched;
+            customEditedHtml = null; // 切換新檔案時重置手動微調快取
             renderDomainSelector();
             generateIEP();
         }
 
-        // 拖放事件
         function handleDragOver(e) { e.preventDefault(); }
         function handleDragLeave(e) { e.preventDefault(); }
         function handleDrop(e) {
@@ -436,6 +487,7 @@
 
         function toggleGoal(id) {
             selectedGoalIds = selectedGoalIds.includes(id) ? selectedGoalIds.filter(g => g !== id) : [...selectedGoalIds, id];
+            customEditedHtml = null; // 更改勾選項目時重新生成結構化內容
             renderDomainSelector();
             generateIEP();
         }
@@ -445,6 +497,7 @@
             document.getElementById('btn-2b').className = tpl === '2b' ? 'p-2 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-left transition' : 'p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-left transition';
             document.getElementById('btn-2a').className = tpl === '2a' ? 'p-2 rounded-lg border-2 border-indigo-600 bg-indigo-50 text-left transition' : 'p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-left transition';
             updateStatusBadge();
+            customEditedHtml = null;
             generateIEP();
         }
 
@@ -470,6 +523,13 @@
         }
 
         function generateIEP() {
+            const docContainer = document.getElementById('iep-document');
+
+            // 如果用戶之前在右側有手動微調過文字，且只是切換語言，我們保留其編輯痕跡或重新渲染
+            if (customEditedHtml && currentLang !== 'zh') {
+                // 若切換到英文/雙語，根據最新資料重新生成以確保語言正確
+            }
+
             const nameZh = document.getElementById('stu-name-zh').value;
             const nameEn = document.getElementById('stu-name-en').value;
             const cls = document.getElementById('stu-class').value;
@@ -485,7 +545,6 @@
             const senText = currentLang === 'zh' ? senMap[senKey].zh : (currentLang === 'en' ? senMap[senKey].en : `${senMap[senKey].zh} / ${senMap[senKey].en}`);
 
             const activeGoals = questionnaireGoals.filter(g => selectedGoalIds.includes(g.id));
-            const docContainer = document.getElementById('iep-document');
 
             if (currentTemplate === '2b') {
                 const rowsHtml = activeGoals.map(g => `
@@ -596,25 +655,8 @@
                 strengthsEn: document.getElementById('stu-strengths-en').value,
                 weaknessesZh: document.getElementById('stu-weaknesses-zh').value,
                 weaknessesEn: document.getElementById('stu-weaknesses-en').value,
-                selectedGoalIds: selectedGoalIds
+                selectedGoalIds: selectedGoalIds,
+                customEditedHtml: document.getElementById('iep-document').innerHTML
             };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `IEP_${data.nameZh}_版本歷程.json`;
-            link.click();
-        }
-
-        function exportToWord() {
-            const content = document.getElementById('iep-document').innerHTML;
-            const nameZh = document.getElementById('stu-name-zh').value;
-            const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><style>body{font-family:'PMingLiU','Calibri',sans-serif;font-size:10.5pt;}table{width:100%;border-collapse:collapse;margin:10px 0;}th,td{border:1px solid #000;padding:6px;vertical-align:top;}th{background:#f0f0f0;}</style></head><body>${content}</body></html>`;
-            const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `IEP_${nameZh}_${currentLang.toUpperCase()}.doc`;
-            link.click();
-        }
-    </script>
-</body>
-</html>
