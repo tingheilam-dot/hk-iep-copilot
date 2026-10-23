@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HK-IEP CoPilot 4.0｜香港校本 IEP 智慧擬寫與微調平台</title>
+    <title>HK-IEP CoPilot 5.0｜香港校本 IEP 智慧擬寫與 PDF 解析平台</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 PDF.js 核心庫，用於在瀏覽器本地安全解析 PDF 文字 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -25,10 +26,10 @@
     <header class="bg-indigo-950 text-white shadow-md no-print">
         <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-col md:flex-row justify-between items-center gap-3">
             <div class="flex items-center gap-3">
-                <span class="bg-amber-400 text-indigo-950 font-extrabold px-3 py-1 rounded-lg text-base">HK-IEP 4.0</span>
+                <span class="bg-amber-400 text-indigo-950 font-extrabold px-3 py-1 rounded-lg text-base">HK-IEP 5.0</span>
                 <div>
-                    <h1 class="text-lg font-bold tracking-wide">香港校本個別學習計劃 (IEP) 智慧擬寫與微調平台</h1>
-                    <p class="text-xs text-indigo-200">支援問卷上傳、期中微調版本管理、中英雙語切換｜林老師（林廷曦老師）專用版</p>
+                    <h1 class="text-lg font-bold tracking-wide">香港校本個別學習計劃 (IEP) 智慧擬寫與 PDF 解析平台</h1>
+                    <p class="text-xs text-indigo-200">支援 PDF 文本自動解析、期中微調版本記錄、中英雙語切換｜林老師專用版</p>
                 </div>
             </div>
             <div class="flex items-center gap-2 bg-indigo-900 p-1.5 rounded-xl border border-indigo-700">
@@ -45,22 +46,31 @@
         <!-- 左側面板 -->
         <section class="lg:col-span-5 space-y-4 no-print">
 
-            <!-- 上傳與專案管理 -->
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
-                <h2 class="text-sm font-bold text-indigo-950 flex items-center justify-between">
-                    <span class="flex items-center gap-2"><span class="bg-indigo-600 text-white w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">1</span> 📂 檔案與版本管理</span>
+            <!-- 步驟 1：升級版 PDF 問卷上傳與解析中心 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border-2 border-indigo-200 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-indigo-950 flex items-center gap-2">
+                        <span class="bg-indigo-600 text-white w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">1</span>
+                        📂 智慧上傳問卷 PDF 或專案檔
+                    </h2>
                     <button onclick="saveProjectJson()" class="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded border border-indigo-200 font-medium hover:bg-indigo-100">💾 儲存專案 (.json)</button>
-                </h2>
-                <input type="file" id="real-file-input" accept=".pdf,.png,.jpg,.jpeg,.txt,.json" class="hidden" onchange="handleFileUpload(event)">
-                <div onclick="document.getElementById('real-file-input').click()" class="border-2 border-dashed border-indigo-300 bg-indigo-50/40 hover:bg-indigo-50 rounded-xl p-3 text-center cursor-pointer transition">
-                    <div class="text-xl mb-0.5">📤</div>
-                    <div class="text-xs font-bold text-indigo-900">上傳問卷檔案 / 載入已儲存的 IEP 專案檔</div>
                 </div>
-                <div id="upload-status-box" class="hidden p-2 rounded-lg text-xs border"></div>
+
+                <input type="file" id="real-file-input" accept=".pdf,.txt,.json" class="hidden" onchange="handleFileUpload(event)">
+                
+                <div onclick="document.getElementById('real-file-input').click()" 
+                     ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)"
+                     class="border-2 border-dashed border-indigo-300 bg-indigo-50/40 hover:bg-indigo-50 rounded-xl p-3 text-center cursor-pointer transition">
+                    <div class="text-xl mb-0.5">📤</div>
+                    <div class="text-xs font-bold text-indigo-900">點擊上傳，或將 PDF 問卷 / 專案檔拖放到這裡</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">支援：問卷 PDF 檔、純文字檔 (.txt)、IEP 專案檔 (.json)</div>
+                </div>
+
+                <div id="upload-status-box" class="hidden p-2.5 rounded-lg text-xs border"></div>
             </div>
 
-            <!-- 步驟 2：微調與版本控制面板 (新功能) -->
-            <div class="bg-white p-4 rounded-xl shadow-sm border-2 border-amber-300 bg-amber-50/30 space-y-3">
+            <!-- 步驟 2：微調與版本控制面板 -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-300 bg-amber-50/20 space-y-3">
                 <div class="flex justify-between items-center">
                     <h2 class="text-sm font-bold text-amber-950 flex items-center gap-2">
                         <span class="bg-amber-600 text-white w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">2</span>
@@ -68,19 +78,16 @@
                     </h2>
                     <button onclick="addNewRevision()" class="text-[11px] bg-amber-600 hover:bg-amber-700 text-white px-2 py-1 rounded font-bold">+ 建立新修訂版本</button>
                 </div>
-                <p class="text-[11px] text-slate-600">因應病歷更新或家長需求微調計劃時，可記錄修訂原因與日期，建立版本歷程：</p>
                 <div class="space-y-2 text-xs">
                     <div>
-                        <label class="block font-medium text-slate-700 mb-0.5">目前版本狀態 / 修訂紀錄說明：</label>
-                        <input type="text" id="revision-note" value="初版計劃 (10月訂立)" oninput="generateIEP()" class="w-full border border-slate-300 rounded px-2 py-1 bg-white">
+                        <label class="block font-medium text-slate-700 mb-0.5">目前版本狀態說明：</label>
+                        <input type="text" id="revision-note" value="初版計劃 (2026年10月訂立)" oninput="generateIEP()" class="w-full border border-slate-300 rounded px-2 py-1 bg-white">
                     </div>
-                    <div class="flex items-center justify-between pt-1">
-                        <span class="text-[11px] text-slate-500">歷史版本記錄：<span id="version-count">1</span> 個版本</span>
-                        <button onclick="toggleRevisionHistory()" class="text-indigo-600 hover:underline font-medium text-[11px]">查看歷史版本清單</button>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] text-slate-500">歷史版本數：<span id="version-count">1</span></span>
+                        <button onclick="toggleRevisionHistory()" class="text-indigo-600 hover:underline font-medium text-[11px]">查看歷史清單</button>
                     </div>
-                    <div id="version-history-box" class="hidden bg-white p-2 rounded border border-slate-200 space-y-1 text-[11px]">
-                        <!-- 歷史版本清單 -->
-                    </div>
+                    <div id="version-history-box" class="hidden bg-white p-2 rounded border border-slate-200 space-y-1 text-[11px]"></div>
                 </div>
             </div>
 
@@ -164,7 +171,7 @@
 
         </section>
 
-        <!-- 右側：預覽與微調輸出 -->
+        <!-- 右側：預覽與輸出 -->
         <section class="lg:col-span-7 space-y-4">
             <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-2 no-print">
                 <div class="flex items-center gap-2">
@@ -177,13 +184,13 @@
                 </div>
             </div>
 
-            <!-- IEP 計劃書渲染容器 -->
             <div id="iep-document" contenteditable="true" class="print-area bg-white p-8 rounded-xl shadow-sm border border-slate-200 space-y-5 leading-relaxed"></div>
         </section>
 
     </main>
 
     <script>
+        // 初始化 PDF.js Worker
         if (window.pdfjsLib) {
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
@@ -204,6 +211,7 @@
         const questionnaireGoals = [
             {
                 id: 'q_learn_group_think',
+                keywords: ['小組討論', '高層次思考', '大綱', '推論', '要點', '獨立', '4', '8'],
                 badge: '問卷項目 4, 6, 8',
                 cat_zh: '學習適應 (小組討論與高層次思考)',
                 cat_en: 'Learning Adaptation (Group Discussion & Thinking)',
@@ -226,6 +234,7 @@
             },
             {
                 id: 'q_learn_flex_sensory',
+                keywords: ['感官', '靈活性', '改變', '過渡', '耳塞', '1', '7'],
                 badge: '問卷項目 1, 7',
                 cat_zh: '學習適應 (處事靈活性與感官調適)',
                 cat_en: 'Learning Adaptation (Flexibility & Sensory Regulation)',
@@ -248,6 +257,7 @@
             },
             {
                 id: 'q_social_conv_solve',
+                keywords: ['對話', '離題', '社交思考', '解讀', '婉轉', '過失', '14', '15', '17'],
                 badge: '問卷項目 9-17',
                 cat_zh: '社交適應 (雙向對話與社交解難)',
                 cat_en: 'Social Adaptation (Conversation & Problem-Solving)',
@@ -270,6 +280,7 @@
             },
             {
                 id: 'q_emo_reg',
+                keywords: ['情緒', '進階情緒', '失衡', '憤怒', '焦慮', '29', '31', '32'],
                 badge: '問卷項目 29-32',
                 cat_zh: '情緒適應 (情緒理解與自我調控)',
                 cat_en: 'Emotional Adaptation (Understanding & Regulation)',
@@ -299,17 +310,97 @@
             generateIEP();
         };
 
+        // 核心：上傳檔案處理（支援 .json 專案檔、.txt 文字檔、及 .pdf 問卷文字解析）
+        async function handleFileUpload(e) {
+            if (!e.target.files || e.target.files.length === 0) return;
+            const file = e.target.files[0];
+            const ext = file.name.split('.').pop().toLowerCase();
+            const statusBox = document.getElementById('upload-status-box');
+            statusBox.className = 'p-2.5 rounded-lg text-xs border bg-indigo-50 text-indigo-900 border-indigo-200 block';
+            statusBox.innerHTML = `⏳ 正在解析檔案：<b>${file.name}</b>...`;
+
+            try {
+                if (ext === 'json') {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    if (data.nameZh) {
+                        document.getElementById('stu-name-zh').value = data.nameZh;
+                        document.getElementById('stu-name-en').value = data.nameEn || '';
+                        document.getElementById('stu-class').value = data.cls || '';
+                        document.getElementById('stu-sen').value = data.sen || 'asd';
+                        document.getElementById('period-date').value = data.period || '';
+                        if (data.revisionNote) document.getElementById('revision-note').value = data.revisionNote;
+                        if (data.revisionHistory) {
+                            revisionHistory = data.revisionHistory;
+                            document.getElementById('version-count').innerText = revisionHistory.length;
+                        }
+                        if (data.strengthsZh) document.getElementById('stu-strengths-zh').value = data.strengthsZh;
+                        if (data.strengthsEn) document.getElementById('stu-strengths-en').value = data.strengthsEn;
+                        if (data.weaknessesZh) document.getElementById('stu-weaknesses-zh').value = data.weaknessesZh;
+                        if (data.weaknessesEn) document.getElementById('stu-weaknesses-en').value = data.weaknessesEn;
+                        if (Array.isArray(data.selectedGoalIds)) selectedGoalIds = data.selectedGoalIds;
+                        renderDomainSelector();
+                        generateIEP();
+                        statusBox.className = 'p-2.5 rounded-lg text-xs border bg-emerald-50 text-emerald-900 border-emerald-200 block';
+                        statusBox.innerHTML = `✅ 成功載入專案備份檔：<b>${file.name}</b>！`;
+                    }
+                } else if (ext === 'txt') {
+                    const text = await file.text();
+                    analyzeTextContent(text);
+                    statusBox.className = 'p-2.5 rounded-lg text-xs border bg-emerald-50 text-emerald-900 border-emerald-200 block';
+                    statusBox.innerHTML = `✅ 成功讀取文字檔：<b>${file.name}</b> 並完成關鍵字匹配！`;
+                } else if (ext === 'pdf') {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    let fullText = '';
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const content = await page.getTextContent();
+                        fullText += content.items.map(item => item.str).join(' ') + '\n';
+                    }
+                    analyzeTextContent(fullText);
+                    statusBox.className = 'p-2.5 rounded-lg text-xs border bg-emerald-50 text-emerald-900 border-emerald-200 block';
+                    statusBox.innerHTML = `✅ 成功解析 PDF 問卷文本（共 ${pdf.numPages} 頁）！已自動對應相關 IEP 範疇。`;
+                }
+            } catch (err) {
+                statusBox.className = 'p-2.5 rounded-lg text-xs border bg-rose-50 text-rose-900 border-rose-200 block';
+                statusBox.innerHTML = `⚠️ 解析錯誤：${err.message}`;
+            }
+        }
+
+        function analyzeTextContent(text) {
+            let matched = [];
+            questionnaireGoals.forEach(g => {
+                if (g.keywords.some(kw => text.includes(kw))) {
+                    matched.push(g.id);
+                }
+            });
+            if (matched.length > 0) selectedGoalIds = matched;
+            renderDomainSelector();
+            generateIEP();
+        }
+
+        // 拖放事件
+        function handleDragOver(e) { e.preventDefault(); }
+        function handleDragLeave(e) { e.preventDefault(); }
+        function handleDrop(e) {
+            e.preventDefault();
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleFileUpload({ target: { files: e.dataTransfer.files } });
+            }
+        }
+
         function addNewRevision() {
             const newId = revisionHistory.length + 1;
-            const note = prompt(`請輸入第 ${newId} 次修訂的原因或說明（例如：因應家長要求微調目標 / 醫生更新病歷）：`, `期中修訂 #${newId} (微調目標與策略)`);
+            const note = prompt(`請輸入第 ${newId} 次修訂說明（例如：期中檢討會議微調 / 更新病歷）：`, `期中修訂 #${newId}`);
             if (note) {
                 const today = new Date().toISOString().split('T')[0];
                 revisionHistory.push({ id: newId, note: note, date: today });
                 document.getElementById('revision-note').value = `${note} (${today})`;
                 document.getElementById('version-count').innerText = revisionHistory.length;
                 renderVersionHistory();
-                alert(`✅ 成功建立第 ${newId} 版修訂紀錄！系統已更新版本標籤。`);
                 generateIEP();
+                alert(`✅ 已建立新修訂版本！`);
             }
         }
 
@@ -321,12 +412,7 @@
 
         function renderVersionHistory() {
             const box = document.getElementById('version-history-box');
-            box.innerHTML = revisionHistory.map(v => `
-                <div class="flex justify-between items-center border-b pb-1">
-                    <div><b>版本 #${v.id}</b>: ${v.note}</div>
-                    <span class="text-slate-400">${v.date}</span>
-                </div>
-            `).join('');
+            box.innerHTML = revisionHistory.map(v => `<div class="flex justify-between border-b pb-1"><div><b>#${v.id}</b>: ${v.note}</div><span class="text-slate-400">${v.date}</span></div>`).join('');
         }
 
         function renderDomainSelector() {
@@ -411,30 +497,22 @@
                         <td class="whitespace-pre-line">${t(g.tier3_zh, g.tier3_en)}</td>
                         <td class="whitespace-pre-line">${t(g.home_zh, g.home_en)}</td>
                         <td class="whitespace-pre-line">${t(g.criteria_zh, g.criteria_en)}</td>
-                        <td class="text-center">☐</td>
-                        <td class="text-center">☐</td>
-                        <td class="text-center">☐</td>
+                        <td class="text-center">☐</td><td class="text-center">☐</td><td class="text-center">☐</td>
                     </tr>
                 `).join('');
 
                 docContainer.innerHTML = `
                     <div class="text-center border-b-2 border-slate-800 pb-3">
                         <h2 class="text-xl font-bold tracking-wider">${t('個別學習計劃：(分層支援模式)', 'Individual Education Plan (Tiered Model)')}</h2>
-                        <p class="text-xs text-indigo-900 font-bold mt-1">🔄 計劃版本狀態：${revNote}</p>
+                        <p class="text-xs text-indigo-900 font-bold mt-1">🔄 版本狀態：${revNote}</p>
                     </div>
                     <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs border border-slate-300 p-4 rounded-lg bg-slate-50/40">
                         <div><b>${t('學生姓名：', 'Student Name: ')}</b>${studentName}</div>
                         <div><b>${t('班級 / 年齡：', 'Class / Age: ')}</b>${cls}</div>
                         <div><b>${t('SEN 類別：', 'SEN Category: ')}</b>${senText}</div>
                         <div><b>${t('施行時段：', 'Period: ')}</b>${periodDate}</div>
-                        <div class="col-span-2 pt-2 border-t border-slate-200">
-                            <b>${t('強項及興趣：', 'Strengths: ')}</b>
-                            <div class="mt-1 whitespace-pre-line">${t(strengthsZh, strengthsEn)}</div>
-                        </div>
-                        <div class="col-span-2 pt-2 border-t border-slate-200">
-                            <b>${t('優先關注弱項：', 'Needs: ')}</b>
-                            <div class="mt-1 whitespace-pre-line">${t(weaknessesZh, weaknessesEn)}</div>
-                        </div>
+                        <div class="col-span-2 pt-2 border-t border-slate-200"><b>${t('強項及興趣：', 'Strengths: ')}</b><div class="mt-1 whitespace-pre-line">${t(strengthsZh, strengthsEn)}</div></div>
+                        <div class="col-span-2 pt-2 border-t border-slate-200"><b>${t('優先關注弱項：', 'Needs: ')}</b><div class="mt-1 whitespace-pre-line">${t(weaknessesZh, weaknessesEn)}</div></div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full iep-table border-collapse">
@@ -448,12 +526,8 @@
                                     <th colspan="3">${t('達標', 'Status')}</th>
                                 </tr>
                                 <tr>
-                                    <th>${t('第一層', 'Tier 1')}</th>
-                                    <th>${t('第二層', 'Tier 2')}</th>
-                                    <th>${t('第三層', 'Tier 3')}</th>
-                                    <th class="w-8">完</th>
-                                    <th class="w-8">部</th>
-                                    <th class="w-8">尚</th>
+                                    <th>${t('第一層', 'Tier 1')}</th><th>${t('第二層', 'Tier 2')}</th><th>${t('第三層', 'Tier 3')}</th>
+                                    <th class="w-8">完</th><th class="w-8">部</th><th class="w-8">尚</th>
                                 </tr>
                             </thead>
                             <tbody>${rowsHtml}</tbody>
@@ -497,14 +571,9 @@
                         <table class="w-full iep-table border-collapse">
                             <thead>
                                 <tr>
-                                    <th>${t('範疇', 'Domain')}</th>
-                                    <th>${t('長期目標', 'Long-term')}</th>
-                                    <th>${t('短期目標', 'Short-term')}</th>
-                                    <th>${t('學校策略', 'School')}</th>
-                                    <th>${t('家長', 'Parent')}</th>
-                                    <th>${t('負責', 'Staff')}</th>
-                                    <th>${t('準則', 'Criteria')}</th>
-                                    <th>${t('成效', 'Progress')}</th>
+                                    <th>${t('範疇', 'Domain')}</th><th>${t('長期目標', 'Long-term')}</th><th>${t('短期目標', 'Short-term')}</th>
+                                    <th>${t('學校策略', 'School')}</th><th>${t('家長', 'Parent')}</th><th>${t('負責', 'Staff')}</th>
+                                    <th>${t('準則', 'Criteria')}</th><th>${t('成效', 'Progress')}</th>
                                 </tr>
                             </thead>
                             <tbody>${rowsHtml}</tbody>
@@ -534,41 +603,6 @@
             link.href = URL.createObjectURL(blob);
             link.download = `IEP_${data.nameZh}_版本歷程.json`;
             link.click();
-        }
-
-        async function processUploadedFile(file) {
-            const text = await file.text();
-            try {
-                const data = JSON.parse(text);
-                if (data.nameZh) {
-                    document.getElementById('stu-name-zh').value = data.nameZh;
-                    document.getElementById('stu-name-en').value = data.nameEn || '';
-                    document.getElementById('stu-class').value = data.cls || '';
-                    document.getElementById('stu-sen').value = data.sen || 'asd';
-                    document.getElementById('period-date').value = data.period || '';
-                    if (data.revisionNote) document.getElementById('revision-note').value = data.revisionNote;
-                    if (data.revisionHistory) {
-                        revisionHistory = data.revisionHistory;
-                        document.getElementById('version-count').innerText = revisionHistory.length;
-                    }
-                    if (data.strengthsZh) document.getElementById('stu-strengths-zh').value = data.strengthsZh;
-                    if (data.strengthsEn) document.getElementById('stu-strengths-en').value = data.strengthsEn;
-                    if (data.weaknessesZh) document.getElementById('stu-weaknesses-zh').value = data.weaknessesZh;
-                    if (data.weaknessesEn) document.getElementById('stu-weaknesses-en').value = data.weaknessesEn;
-                    if (Array.isArray(data.selectedGoalIds)) selectedGoalIds = data.selectedGoalIds;
-                    renderDomainSelector();
-                    generateIEP();
-                    alert(`✅ 成功載入專案檔！已自動恢復該學生的 IEP 與版本記錄。`);
-                }
-            } catch(e) {
-                alert('檔案格式解析錯誤。');
-            }
-        }
-
-        function handleFileUpload(e) {
-            if (e.target.files && e.target.files.length > 0) {
-                processUploadedFile(e.target.files[0]);
-            }
         }
 
         function exportToWord() {
