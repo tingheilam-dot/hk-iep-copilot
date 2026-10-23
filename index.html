@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HK-IEP CoPilot 5.2｜香港校本 IEP 智慧擬寫與雙向同步平台</title>
+    <title>HK-IEP CoPilot 5.3｜香港校本 IEP 智慧擬寫與多重 SEN 支援平台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -25,10 +25,10 @@
     <header class="bg-indigo-950 text-white shadow-md no-print">
         <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-col md:flex-row justify-between items-center gap-3">
             <div class="flex items-center gap-3">
-                <span class="bg-amber-400 text-indigo-950 font-extrabold px-3 py-1 rounded-lg text-base">HK-IEP 5.2</span>
+                <span class="bg-amber-400 text-indigo-950 font-extrabold px-3 py-1 rounded-lg text-base">HK-IEP 5.3</span>
                 <div>
                     <h1 class="text-lg font-bold tracking-wide">香港校本個別學習計劃 (IEP) 智慧擬寫平台</h1>
-                    <p class="text-xs text-indigo-200">已修正語言切換同步問題、支援目標多選與版本記錄｜林老師專用版</p>
+                    <p class="text-xs text-indigo-200">支援多重 SEN 類型自由多選、問卷目標庫多選、中英雙語切換｜林老師專用版</p>
                 </div>
             </div>
             <div class="flex items-center gap-2 bg-indigo-900 p-1.5 rounded-xl border border-indigo-700">
@@ -106,11 +106,11 @@
                 </div>
             </div>
 
-            <!-- 步驟 4：學生基本資料與強弱項 -->
+            <!-- 步驟 4：學生基本資料與多重 SEN 類型勾選 -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
                 <h2 class="text-sm font-bold text-indigo-950 flex items-center gap-2">
                     <span class="bg-indigo-100 text-indigo-800 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">4</span>
-                    學生基本資料與問卷現況
+                    學生基本資料與 SEN 類別 (支援多選)
                 </h2>
                 <div class="grid grid-cols-2 gap-2 text-xs">
                     <div>
@@ -128,14 +128,18 @@
                             <input type="text" id="period-date" value="2026/10 - 2027/01" oninput="generateIEP()" class="w-full border border-slate-300 rounded px-2 py-1">
                         </div>
                     </div>
-                    <div class="col-span-2">
-                        <label class="block text-slate-600 mb-1 font-medium">SEN 類別</label>
-                        <select id="stu-sen" onchange="generateIEP()" class="w-full border border-slate-300 rounded px-2 py-1 bg-white">
-                            <option value="asd">自閉症 (ASD)</option>
-                            <option value="asd_adhd">自閉症兼注意力不足/過度活躍症 (ASD & ADHD)</option>
-                            <option value="spld">特殊學習困難 (SpLD)</option>
-                            <option value="id">輕度智障 (ID)</option>
-                        </select>
+                    
+                    <!-- 多重 SEN 類別勾選區 -->
+                    <div class="col-span-2 pt-1 border-t border-slate-100">
+                        label class="block text-slate-700 mb-1 font-bold">特殊教育需要類別 (可同時勾選多種 SEN)：</label>
+                        <div class="grid grid-cols-2 gap-1.5 bg-slate-50 p-2 rounded border border-slate-200">
+                            <label class="flex items-center gap-1.5 cursor-pointer text-xs"><input type="checkbox" value="asd" name="sen-checkbox" checked onchange="generateIEP()" class="rounded text-indigo-600"> 自閉症 (ASD)</label>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-xs"><input type="checkbox" value="adhd" name="sen-checkbox" checked onchange="generateIEP()" class="rounded text-indigo-600"> 注意力不足/過度活躍 (ADHD)</label>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-xs"><input type="checkbox" value="sli" name="sen-checkbox" checked onchange="generateIEP()" class="rounded text-indigo-600"> 言語障礙 (SLI)</label>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-xs"><input type="checkbox" value="spld" name="sen-checkbox" onchange="generateIEP()" class="rounded text-indigo-600"> 讀寫障礙 (SpLD)</label>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-xs"><input type="checkbox" value="id" name="sen-checkbox" onchange="generateIEP()" class="rounded text-indigo-600"> 輕度智障 (ID)</label>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-xs"><input type="checkbox" value="hi" name="sen-checkbox" onchange="generateIEP()" class="rounded text-indigo-600"> 聽障 / 視障 (HI/VI)</label>
+                        </div>
                     </div>
                 </div>
 
@@ -183,7 +187,6 @@
                 </div>
             </div>
 
-            <!-- 加上 oninput 即時回寫監聽，確保切換語言時不會遺失右側的微調修改 -->
             <div id="iep-document" contenteditable="true" oninput="syncUserEdits()" class="print-area bg-white p-8 rounded-xl shadow-sm border border-slate-200 space-y-5 leading-relaxed"></div>
         </section>
 
@@ -200,11 +203,14 @@
             { id: 1, note: '初版計劃 (2026年10月訂立)', date: '2026-10-23' }
         ];
 
-        const senMap = {
+        // 多重 SEN 字典庫
+        const senDict = {
             asd: { zh: '自閉症 (ASD)', en: 'Autism Spectrum Disorder (ASD)' },
-            asd_adhd: { zh: '自閉症 兼 注意力不足/過度活躍症 (ASD & ADHD)', en: 'Autism Spectrum Disorder (ASD) & ADHD' },
-            spld: { zh: '特殊學習困難 (SpLD)', en: 'Specific Learning Difficulties (SpLD)' },
-            id: { zh: '輕度智障 (Mild ID)', en: 'Mild Intellectual Disability (ID)' }
+            adhd: { zh: '注意力不足/過度活躍症 (ADHD)', en: 'Attention Deficit Hyperactivity Disorder (ADHD)' },
+            sli: { zh: '言語障礙 (SLI)', en: 'Speech and Language Impairment (SLI)' },
+            spld: { zh: '讀寫障礙 (SpLD)', en: 'Specific Learning Difficulties (SpLD)' },
+            id: { zh: '輕度智障 (Mild ID)', en: 'Mild Intellectual Disability (ID)' },
+            hi: { zh: '聽障 / 視障 (HI/VI)', en: 'Hearing/Visual Impairment (HI/VI)' }
         };
 
         const questionnaireGoals = [
@@ -349,7 +355,7 @@
         ];
 
         let selectedGoalIds = ['q_learn_group_think', 'q_learn_flex_sensory', 'q_social_conv_solve', 'q_emo_reg', 'q_learn_routine_exec', 'q_social_play_conflict'];
-        let customEditedHtml = null; // 用於雙向記憶用戶在右側微調的內容
+        let customEditedHtml = null;
 
         window.onload = function() {
             renderDomainSelector();
@@ -357,8 +363,16 @@
         };
 
         function syncUserEdits() {
-            const doc = document.getElementById('iep-document');
-            customEditedHtml = doc.innerHTML; // 當用戶在右側直接打字時，自動記憶
+            customEditedHtml = document.getElementById('iep-document').innerHTML;
+        }
+
+        // 取得目前勾選的多重 SEN 類別字串
+        function getSelectedSenText() {
+            const checkboxes = document.querySelectorAll('input[name="sen-checkbox"]:checked');
+            const values = Array.from(checkboxes).map(cb => cb.value);
+            if (values.length === 0) return currentLang === 'en' ? 'None Specified' : '未指定';
+            
+            return values.map(v => currentLang === 'en' ? senDict[v].en : senDict[v].zh).join(currentLang === 'en' ? ' & ' : ' 兼 ');
         }
 
         async function handleFileUpload(e) {
@@ -377,7 +391,6 @@
                         document.getElementById('stu-name-zh').value = data.nameZh;
                         document.getElementById('stu-name-en').value = data.nameEn || '';
                         document.getElementById('stu-class').value = data.cls || '';
-                        document.getElementById('stu-sen').value = data.sen || 'asd';
                         document.getElementById('period-date').value = data.period || '';
                         if (data.revisionNote) document.getElementById('revision-note').value = data.revisionNote;
                         if (data.revisionHistory) {
@@ -389,6 +402,11 @@
                         if (data.weaknessesZh) document.getElementById('stu-weaknesses-zh').value = data.weaknessesZh;
                         if (data.weaknessesEn) document.getElementById('stu-weaknesses-en').value = data.weaknessesEn;
                         if (Array.isArray(data.selectedGoalIds)) selectedGoalIds = data.selectedGoalIds;
+                        if (Array.isArray(data.senValues)) {
+                            document.querySelectorAll('input[name="sen-checkbox"]').forEach(cb => {
+                                cb.checked = data.senValues.includes(cb.value);
+                            });
+                        }
                         customEditedHtml = data.customEditedHtml || null;
                         renderDomainSelector();
                         generateIEP();
@@ -427,7 +445,7 @@
                 }
             });
             if (matched.length > 0) selectedGoalIds = matched;
-            customEditedHtml = null; // 切換新檔案時重置手動微調快取
+            customEditedHtml = null;
             renderDomainSelector();
             generateIEP();
         }
@@ -487,7 +505,7 @@
 
         function toggleGoal(id) {
             selectedGoalIds = selectedGoalIds.includes(id) ? selectedGoalIds.filter(g => g !== id) : [...selectedGoalIds, id];
-            customEditedHtml = null; // 更改勾選項目時重新生成結構化內容
+            customEditedHtml = null;
             renderDomainSelector();
             generateIEP();
         }
@@ -525,15 +543,10 @@
         function generateIEP() {
             const docContainer = document.getElementById('iep-document');
 
-            // 如果用戶之前在右側有手動微調過文字，且只是切換語言，我們保留其編輯痕跡或重新渲染
-            if (customEditedHtml && currentLang !== 'zh') {
-                // 若切換到英文/雙語，根據最新資料重新生成以確保語言正確
-            }
-
             const nameZh = document.getElementById('stu-name-zh').value;
             const nameEn = document.getElementById('stu-name-en').value;
             const cls = document.getElementById('stu-class').value;
-            const senKey = document.getElementById('stu-sen').value;
+            const senText = getSelectedSenText();
             const periodDate = document.getElementById('period-date').value;
             const revNote = document.getElementById('revision-note').value;
             const strengthsZh = document.getElementById('stu-strengths-zh').value;
@@ -542,7 +555,6 @@
             const weaknessesEn = document.getElementById('stu-weaknesses-en').value;
 
             const studentName = currentLang === 'zh' ? nameZh : (currentLang === 'en' ? nameEn : `${nameZh} (${nameEn})`);
-            const senText = currentLang === 'zh' ? senMap[senKey].zh : (currentLang === 'en' ? senMap[senKey].en : `${senMap[senKey].zh} / ${senMap[senKey].en}`);
 
             const activeGoals = questionnaireGoals.filter(g => selectedGoalIds.includes(g.id));
 
@@ -568,7 +580,7 @@
                     <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs border border-slate-300 p-4 rounded-lg bg-slate-50/40">
                         <div><b>${t('學生姓名：', 'Student Name: ')}</b>${studentName}</div>
                         <div><b>${t('班級 / 年齡：', 'Class / Age: ')}</b>${cls}</div>
-                        <div><b>${t('SEN 類別：', 'SEN Category: ')}</b>${senText}</div>
+                        <div class="col-span-2"><b>${t('特殊教育需要類別 (多重 SEN)：', 'SEN Categories (Multiple): ')}</b>${senText}</div>
                         <div><b>${t('施行時段：', 'Period: ')}</b>${periodDate}</div>
                         <div class="col-span-2 pt-2 border-t border-slate-200"><b>${t('強項及興趣：', 'Strengths: ')}</b><div class="mt-1 whitespace-pre-line">${t(strengthsZh, strengthsEn)}</div></div>
                         <div class="col-span-2 pt-2 border-t border-slate-200"><b>${t('優先關注弱項：', 'Needs: ')}</b><div class="mt-1 whitespace-pre-line">${t(weaknessesZh, weaknessesEn)}</div></div>
@@ -623,7 +635,7 @@
                     <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs border border-slate-300 p-4 rounded-lg bg-slate-50/40">
                         <div><b>${t('學生姓名：', 'Student: ')}</b>${studentName}</div>
                         <div><b>${t('班級 / 年齡：', 'Class: ')}</b>${cls}</div>
-                        <div><b>${t('SEN 類別：', 'SEN: ')}</b>${senText}</div>
+                        <div class="col-span-2"><b>${t('SEN 類別 (多重)：', 'SEN Categories: ')}</b>${senText}</div>
                         <div><b>${t('施行時段：', 'Period: ')}</b>${periodDate}</div>
                     </div>
                     <div class="overflow-x-auto">
@@ -643,11 +655,14 @@
         }
 
         function saveProjectJson() {
+            const checkboxes = document.querySelectorAll('input[name="sen-checkbox"]:checked');
+            const senValues = Array.from(checkboxes).map(cb => cb.value);
+
             const data = {
                 nameZh: document.getElementById('stu-name-zh').value,
                 nameEn: document.getElementById('stu-name-en').value,
                 cls: document.getElementById('stu-class').value,
-                sen: document.getElementById('stu-sen').value,
+                senValues: senValues,
                 period: document.getElementById('period-date').value,
                 revisionNote: document.getElementById('revision-note').value,
                 revisionHistory: revisionHistory,
@@ -660,3 +675,21 @@
             };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `IEP_${data.nameZh}_多重SEN版本.json`;
+            link.click();
+        }
+
+        function exportToWord() {
+            const content = document.getElementById('iep-document').innerHTML;
+            const nameZh = document.getElementById('stu-name-zh').value;
+            const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><style>body{font-family:'PMingLiU','Calibri',sans-serif;font-size:10.5pt;}table{width:100%;border-collapse:collapse;margin:10px 0;}th,td{border:1px solid #000;padding:6px;vertical-align:top;}th{background:#f0f0f0;}</style></head><body>${content}</body></html>`;
+            const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `IEP_${nameZh}_${currentLang.toUpperCase()}.doc`;
+            link.click();
+        }
+    </script>
+</body>
+</html>
